@@ -6,9 +6,6 @@ import org.lizi.framework.annotation.Controller;
 import org.lizi.framework.annotation.RequestMapping;
 import org.lizi.framework.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 @Controller
 @RequestMapping("/test")
@@ -18,7 +15,7 @@ public class TestController {
     private TestService service;
 
     @RequestMapping("/test")
-    public String test(HttpServletRequest request, HttpServletResponse response, @RequestParam("aaaa") String aaa){
+    public String test(@RequestParam("aaaa") String aaa){
         return service.getData();
     }
 }
