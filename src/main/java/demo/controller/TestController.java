@@ -18,11 +18,7 @@ public class TestController {
     private TestService service;
 
     @RequestMapping("/test")
-    public void test(HttpServletRequest request, HttpServletResponse response, @RequestParam("aaaa") String aaa){
-        try {
-            response.getWriter().write(service.getData());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public String test(HttpServletRequest request, HttpServletResponse response, @RequestParam("aaaa") String aaa){
+        return service.getData();
     }
 }

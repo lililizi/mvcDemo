@@ -1,5 +1,6 @@
 package org.lizi.framework.servlet;
 
+import com.google.gson.Gson;
 import org.lizi.framework.annotation.*;
 
 import javax.servlet.ServletConfig;
@@ -89,7 +90,8 @@ public class DispatcherServlet extends HttpServlet {
             paramValues[reqIndex]= req;
             int respIndex =  handler.paramIndexMapping.get(HttpServletResponse.class.getName());
             paramValues[respIndex]= resp;
-            handler.method.invoke(handler.controller,paramValues );
+            Object result = handler.method.invoke(handler.controller,paramValues );
+            resp.getWriter().write(new Gson().toJson(result));
         }catch(Exception e){
             System.err.println(e.getStackTrace());
             e.printStackTrace();
@@ -142,20 +144,22 @@ public class DispatcherServlet extends HttpServlet {
         }
     }
 
+    /**
+     * 找出所有的文件
+     * @param packageName
+     */
     private void doScanner(String packageName) {
-        // 因为packageName是类似于com.lc.demo这样的格式 需要将所有点替换成/的路径 并将转换成String的路径
-        String  url = this.getClass().getClassLoader().getResource("/"+packageName.replaceAll("\\.", "/")).getFile();
-        // 根据路径可以得到一个file
-        File files = new File(url);
-        // 通过循环遍历找出里面所有的类文件
+        String  filePath = this.getClass().getClassLoader().getResource("/"+packageName.replaceAll("\\.", "/")).getFile();
+
+        File files = new File(filePath);
+
         for (File f : files.listFiles()) {
-            // 判断是不是一个目录 如果是一个目录继续调用这个方法 并将路径拼接上去
+
             if (f.isDirectory()) {
                 doScanner(packageName+"."+f.getName());
             }else {
-                //如果是一个文件就需要将这个类名存入 并将他的后缀去掉
                 String className = packageName+"."+f.getName().replace(".class", "");
-                // 将className 存入容器之中
+
                 classNames.add(className);
             }
         }
@@ -174,16 +178,11 @@ public class DispatcherServlet extends HttpServlet {
                 // 对于controller来说 默认情况 一般是 首字母小写 同时我们也需要注意一点，在并不是所有的controller都会被注入。
                 // 注释类型的注释存在于此元素上，则返回true，否则返回false
                 if(clazz.isAnnotationPresent(Controller.class)) {
-                    // 获取controller的类名
-                    // 同时需要注意这里我们获取到的类名首字母是大写的 我们需要将其变成小写
                     String beanName = firstLower(clazz.getSimpleName());
-                    // 判断是不是已经存在形同的key 如果存在相同的 不处理
                     if(!iocs.containsKey(beanName)) {
                         iocs.put(beanName, clazz.newInstance());
                     }
-                }
-                // 针对于service来说
-                else if(clazz.isAnnotationPresent(Service.class)) {
+                }else if(clazz.isAnnotationPresent(Service.class)) {
                     // 1 IOC容器的结构 Map<String,Object>
                     // String 也可以叫做IOC容器的beanName
                     // beanName有几个规则 默认情况下是类名的首字母小写
@@ -208,11 +207,7 @@ public class DispatcherServlet extends HttpServlet {
                         // 这里为什么这样可以 因为instance在这里是单例模式 只被初始化一次
                         iocs.put(c.getName(), instance);
                     }
-                }else {
-                    continue;
                 }
-
-
             }
         } catch (Exception e) {
             e.printStackTrace();
