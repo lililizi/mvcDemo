@@ -1,7 +1,7 @@
 package demo.controller;
 
 import demo.service.TestService;
-import org.lizi.framework.annotation.Autowirted;
+import org.lizi.framework.annotation.Autowire;
 import org.lizi.framework.annotation.Controller;
 import org.lizi.framework.annotation.RequestMapping;
 import org.lizi.framework.annotation.RequestParam;
@@ -11,7 +11,7 @@ import org.lizi.framework.annotation.RequestParam;
 @RequestMapping("/test")
 public class TestController {
 
-    @Autowirted
+    @Autowire
     private TestService service;
 
     @RequestMapping("/test")

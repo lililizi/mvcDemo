@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,7 +39,7 @@ public class DispatcherServlet extends HttpServlet {
         // 3将已经扫描的类进行初始化并放入ioc容器中
         doInstance();
         // 4依赖注入
-        doAutowrited();
+        doAutowired();
         // 5初始化handlerMapping
         initHandlerMapping();
         System.out.println("this is My Spring servlet");
@@ -65,7 +64,6 @@ public class DispatcherServlet extends HttpServlet {
         try{
             Handler handler = getHandler(req);
             if(handler == null){
-                // 没有匹配上
                 resp.getWriter().write("404 Not Found");
                 return;
             }
@@ -93,7 +91,7 @@ public class DispatcherServlet extends HttpServlet {
             if (respIndex != null) {
                 paramValues[respIndex]= resp;
             }
-            
+
             Object result = handler.method.invoke(handler.controller,paramValues );
             resp.getWriter().write(new Gson().toJson(result));
         }catch(Exception e){
@@ -221,7 +219,7 @@ public class DispatcherServlet extends HttpServlet {
     /**
      * 依赖注入
      */
-    private void doAutowrited() {
+    private void doAutowired() {
         // 判断是否为空 如果为空就直接退出
         if(iocs.isEmpty()) return;
         // 不为空就循环取出
@@ -230,13 +228,13 @@ public class DispatcherServlet extends HttpServlet {
             Field[] fields = entry.getValue().getClass().getDeclaredFields();
             // 循环赋值
             for (Field field : fields) {
-                // 这里需要注意 只有加了Autowirted才进行赋值
-                if(!field.isAnnotationPresent(Autowirted.class)) {
+                // 这里需要注意 只有加了Autowire才进行赋值
+                if(!field.isAnnotationPresent(Autowire.class)) {
                     continue;
                 }
 
                 // 如果有获取它的值
-                Autowirted autowrited = field.getAnnotation(Autowirted.class);
+                Autowire autowrited = field.getAnnotation(Autowire.class);
                 String beanName = autowrited.value();
                 // 判断beanName是否设置了
                 if("".equals(beanName)) {
@@ -268,7 +266,9 @@ public class DispatcherServlet extends HttpServlet {
         for (Map.Entry<String, Object> entry : iocs.entrySet()) {
             Class<?> clazz = entry.getValue().getClass();
             // 这里因为handlerMapping对应的是controller所以这里需要判断是不是controller
-            if(!clazz.isAnnotationPresent(Controller.class)) continue;
+            if(!clazz.isAnnotationPresent(Controller.class)){
+                continue;
+            }
             // 保存url
             String url = "";
             // 取出RequestMapping中的值
@@ -280,14 +280,16 @@ public class DispatcherServlet extends HttpServlet {
 
             Method[]  methods = clazz.getMethods();
             for (Method method : methods) {
-                if(!method.isAnnotationPresent(RequestMapping.class)) continue;
+                if(!method.isAnnotationPresent(RequestMapping.class)){
+                    continue;
+                }
 
                 // 映射URL
                 RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
                 String regex = ("/"+url+ requestMapping.value()).replaceAll("/+", "/");
                 Pattern pattern = Pattern.compile(regex);
                 handlerMapping.add(new Handler(pattern, entry.getValue(), method));
-                System.out.println("app Mapping   "+regex+","+method);
+                System.out.println("add Mapping   "+regex+","+method);
             }
         }
     }
